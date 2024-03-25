@@ -1,3 +1,4 @@
+
 server.log("----------------------------------");
 server.log("----------[KuyumcuSoygunu]--------");
 server.log("-------[Successfully Loaded]------");
@@ -58,6 +59,10 @@ Robbing = array();
 
 command bank(){
     permission = config["Permission_Prefix"] + ".bankinfo";
+    allowedCaller = "player";
+    execute(){
+        player.message("The rob command is /rob " + bankNameConfig);
+    }
 }
 
 command rob(location){
