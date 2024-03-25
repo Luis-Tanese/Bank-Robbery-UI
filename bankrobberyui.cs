@@ -37,7 +37,7 @@ robTime = 600; // Put in Seconds
 rewardRobExp = true; // Set to false if you don't want the robbers to be rewarded exp
 rewardRobItems = true; // Set to false if you don't want the robbers to be rewarded items
 robRewardExp = 100000; // Put Experience Reward
-robRewardItems[12, 13, 14]; // Put Item IDs for Reward
+robRewardItems = [12, 13, 14]; // Put Item IDs for Reward
 
 /*
 
