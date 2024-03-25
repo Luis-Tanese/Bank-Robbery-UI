@@ -128,10 +128,6 @@ command robassist(argPlayer){
     }
 }
 
-function uihandle(){
-    a
-}
-
 function robover(player){
     if(Robbing.contains(player.id)){
         broadcast(player.name + " has finished their robbery on " + bankName + " succesfully!", "orange");
