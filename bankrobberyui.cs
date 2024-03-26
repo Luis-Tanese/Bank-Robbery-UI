@@ -1,4 +1,3 @@
-
 server.log("----------------------------------");
 server.log("----------[Bank Robery UI]--------");
 server.log("-------[Successfully Loaded]------");
@@ -8,7 +7,7 @@ server.log("----------[UI By: Heawen]---------");
 server.log("----------------------------------");
 
 // Version
-Version = "1.0.2";
+Version = "1.0.3";
 
 /*
     Permissions:
@@ -27,24 +26,54 @@ Version = "1.0.2";
 
 */
 
+/*
+
+   CONFIGURATION
+
+*/
+
 // BANK INFO
 bankName = "AV Bank"; // Change this to your bank's name (Will be displayed in announcements)
 bankNameConfig = "av_bank"; // Put this in all lowercase letters and use "_" instead of spaces (You can shorten it to just "av") (Will be used in /rob <bankNameConfig> command)
 bankRange = 50; // The range of your bank from the middle position
 bankCooldown = 300; // The cooldown after the bank got robbed
-
+bankMessageIcon = "https://i.imgur.com/SFdYgXJ.png"; // Not necessary (Leave blank if you don't want)
 // BANK POSITION (Try to get to the middle of your bank for the most accurate position)
 x = 10; // Change this to your x position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the most accurate spot)
 y = 10; // Change this to your y position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the most accurate spot)
 z = 10; // Change this to your z position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the most accurate spot)
-
-
 // CONFIGURATION
+robberRange = 40; // The range a player has to be to join a robbery
 robTime = 120; // Put in Seconds
 rewardRobExp = true; // Set to false if you don't want the robbers to be rewarded exp
 rewardRobItems = true; // Set to false if you don't want the robbers to be rewarded items
 robRewardExp = 10000; // Put Experience Reward
 robRewardItems = [12, 13, 14]; // Put Item IDs for Reward
+
+/*
+
+    TRANSLATIONS
+
+*/
+
+bankInfo_Translation = "The rob command is /rob {0}";
+improperUsageRob_Translation = "Improper Usage! Use: /Rob {0}";
+alreadyRobbing_Translation = "Someone is already robbing this bank!";
+playerAlreadyRobbing_Translation = "You are already robbing this bank!";
+robbingCooldown_Translation = "You can't rob this bank since it is on cooldown for {0} seconds!";
+robbingOngoing_Translation = "{0} Is robbing the {1}!";
+robbingTooFar_Translation = "You need to be atleast {0} meters from the {1} to rob it!";
+improperUsageRobAssist_Translation = "Improper Usage! Use: /robassist <player>";
+alreadyAssisting_Translation = "You are already assisting in a robbery!";
+robberNotFound_Translation = "Robber not found!";
+nowAssisting_Translation = "{0} Is now assisting {1} in the robbery!";
+tooFarFromRobber_Translation = "You need to be atleast {0} meters from the robber to join him!";
+robberySuccess_Translation = "{0} Has finished their robbery on {1} Succesfully!";
+robberLost_Translation = "You lost a robbery!";
+robberDiedNatural_Translation = "{0} Has died while robbing the {1} and lost the robbery! He died by {2}";
+robberDiedPlayer_Translation = "{0} Has been killed while robbing the {1} and lost the robbery! The player that killed him was {2}";
+
+
 
 /*
 
@@ -68,7 +97,7 @@ command bank(){
     permission = config["Permission_Prefix"] + ".bankinfo";
     allowedCaller = "player";
     execute(){
-        player.message("The rob command is /rob " + bankNameConfig);
+        player.message(bankInfo_Translation.format(bankNameConfig));
     }
 }
 
@@ -77,26 +106,22 @@ command rob(location){
     allowedCaller = "player";
     execute(){
         if(arguments.count < 1){
-            player.message("Improper Usage! Use: /Rob " + bankNameConfig, "red");
-            return;
-        }
-        if(Robbing != null){
-            player.message("Someone is already robbing this bank");
+            player.message(improperUsageRob_Translation.format(bankNameConfig), "red");
             return;
         }
         else if(location == bankNameConfig){
             if(Robbing.contains(player.id) or Robbing != null){
                 if(Robbing.contains(player.id)){
-                    player.message("You are already robbing this bank!");
+                    player.message(playerAlreadyRobbing_Translation, "red");
                     return;
                 }
                 else if(Robbing != null){
-                    player.message("Someone is already robbing this bank");
+                    player.message(alreadyRobbing_Translation, "red");
                     return;
                 }
             }
             else if(isBankOn == false){
-                player.message("You can't rob this bank since it is on cooldown!", "red");
+                player.message(robbingCooldown_Translation.format(bankCooldown), "red");
                 return;
             }
             else if(isBankOn == true){
@@ -105,11 +130,11 @@ command rob(location){
                 robbingRange = config["RobbingRange"];
                 location = bankName;
                 if(playerPos.distance(bankPos) <= robbingRange){
-                    broadcast(player.name + " Is Robbing The " + location + "!", "orange");
+                    broadcast(robbingOngoing_Translation.format(player.name, location), "orange");
                     wait.seconds(robTime.toNumber(), robover(player));
                 }
                 else{
-                    player.message("You need to be atleast " + config["RobbingRange"] + " meters from " + location + "!", "red");
+                    player.message(robbingTooFar_Translation.format(config["RobbingRange"], location), "red");
                     return;
                 }
             }
@@ -122,28 +147,28 @@ command robassist(argPlayer){
     allowedCaller = "player";
     execute(){
         if(arguments.count < 1){
-            player.message("Improper Usage! Use: /robassist <player>", "red");
+            player.message(improperUsageRobAssist_Translation, "red");
             return;
         }
         argPlayer = toPlayer(argPlayer);
         if(argPlayer == null){
-            player.message("Player not found!", "red");
+            player.message(robberNotFound_Translation, "red");
         }
         else if(Robbing.contains(player.id)){
-            player.message("You are already assisting in a robbery!", "red");
+            player.message(alreadyAssisting_Translation, "red");
             return;
         }
         else if(Robbing.contains(argPlayer.id)){
             robberPos = argPlayer.position;
             playerPos = player.position;
             robbingRange = config["RobbingRange"];
-            if(playerPos.distance(RobberPos) < robbingRange){
-                broadcast(player.name + " Is now Assisting " + argPlayer.name + " in the robbery!", "red");
+            if(playerPos.distance(RobberPos) < robberRange){
+                broadcast(nowAssisting_Translation.format(player.name, argPlayer.name), "red");
                 Robbing.add(player.id);
-                wait.seconds(600, robover(player));
+                wait.seconds(robTime.toNumber(), robover(player));
             }
             else{
-                player.message("You need to be atleast " + robbingRange + " meters from the Robber!", "red");
+                player.message(tooFarFromRobber_Translation.format(robberRange), "red");
             }
         }
     }
@@ -159,7 +184,7 @@ function copUI(player, robber){
 
 function robover(player){
     if(Robbing.contains(player.id)){
-        broadcast(player.name + " has finished their robbery on " + bankName + " succesfully!", "orange");
+        broadcast(robberySuccess_Translation.format(player.name, bankName), "orange");
         Robbing.remove(player.id);
         givexp(player);
         giveitems(player);
@@ -192,12 +217,12 @@ function giveitems(player){
 event onPlayerDeath(player, killer, cause){
     if(Robbing.contains(player.id)){
         if(killer == null){
-            broadcast(player.name + " Has died while robbing the " + bankName + " and lost the robbery! He died by " + cause);
+            broadcast(robberDiedNatural_Translation.format(player.name, bankName, cause));
             Robbing.remove(player.id);
             wait.seconds(2, robover(player));
         }
         else if(killer != null){
-            broadcast(player.name + " Has died while robbing the " + bankName + " and lost the robbery! The player that killed him was " + killer.name + "!");
+            broadcast(robberDiedPlayer_Translation.format(player.name, bankName, killer.name));
             Robbing.remove(player.id);
             wait.seconds(2, robover(player));
         }
@@ -223,7 +248,7 @@ event onInterval(1){
             robbingRange = config["RobbingRange"];
             if(playerPos.distance(bankPos) <= robbingRange){
                 if(player.getData(isOnBank) == true){
-                    player.message("You Entered the bank region!");
+                    player.message("You Entered the" + bankName + "region!");
                     player.setData(isOnBank, false);
                 }
             }
