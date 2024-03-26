@@ -1,13 +1,16 @@
-server.log("----------------------------------");
-server.log("----------[Bank Robery UI]--------");
-server.log("-------[Successfully Loaded]------");
-server.log("----------[Version " + Version + "]---------");
-server.log("--------[Script By: Tanese]-------");
-server.log("----------[UI By: Heawen]---------");
-server.log("----------------------------------");
+event onLoad(){
+    server.log("----------------------------------");
+    server.log("----------[Bank Robery UI]--------");
+    server.log("-------[Successfully Loaded]------");
+    server.log("----------[Version " + Version + "]---------");
+    server.log("--------[Script By: Tanese]-------");
+    server.log("----------[UI By: Heawen]---------");
+    server.log("----------------------------------");
+}
+
 
 // Version
-Version = "1.0.3";
+Version = "1.0.2";
 
 /*
     Permissions:
