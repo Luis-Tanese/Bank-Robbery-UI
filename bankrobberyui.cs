@@ -1,6 +1,6 @@
 
 server.log("----------------------------------");
-server.log("----------[KuyumcuSoygunu]--------");
+server.log("----------[Bank Robery UI]--------");
 server.log("-------[Successfully Loaded]------");
 server.log("----------[Version " + Version + "]---------");
 server.log("--------[Script By: Tanese]-------");
@@ -21,23 +21,28 @@ Version = "1.0.1";
     Permission for Admins:
     Check Position Permission: av.checkpos
 
+    Permissions for Debug (might become a feature):
+    Command: bankdebug | Permission = av.debug
+    Command: unbankdebug | Permission = av.debug
+
 */
 
 // BANK INFO
 bankName = "AV Bank"; // Change this to your bank's name (Will be displayed in announcements)
 bankNameConfig = "av_bank"; // Put this in all lowercase letters and use "_" instead of spaces (You can shorten it to just "av") (Will be used in /rob <bankNameConfig> command)
 bankRange = 50; // The range of your bank from the middle position
+
 // BANK POSITION (Try to get to the middle of the bank)
-x = 10; // Change this to your x position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the best spot)
-y = 10; // Change this to your y position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the best spot)
-z = 10; // Change this to your z position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the best spot)
+x = 10; // Change this to your x position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the most accurate spot)
+y = 10; // Change this to your y position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the most accurate spot)
+z = 10; // Change this to your z position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the most accurate spot)
 
 
 // CONFIGURATION
-robTime = 600; // Put in Seconds
+robTime = 120; // Put in Seconds
 rewardRobExp = true; // Set to false if you don't want the robbers to be rewarded exp
 rewardRobItems = true; // Set to false if you don't want the robbers to be rewarded items
-robRewardExp = 100000; // Put Experience Reward
+robRewardExp = 10000; // Put Experience Reward
 robRewardItems = [12, 13, 14]; // Put Item IDs for Reward
 
 /*
@@ -55,6 +60,7 @@ config = {
     "Permission_Prefix": "av",
     "RobbingRange": bankRange
 };
+
 Robbing = array();
 
 command bank(){
@@ -77,8 +83,16 @@ command rob(location){
             player.message("Someone is already robbing this bank");
             return;
         }
-        if(location == bankNameConfig){
-            if(isBankOn == true){
+        else if(location == bankNameConfig){
+            if(Robbing != null){
+                player.message("Someone is already robbing this bank");
+                return;
+            }
+            else if(isBankOn == false){
+                player.message("You can't rob this bank since it is on cooldown!", "red");
+                return;
+            }
+            else if(isBankOn == true){
                 playerPos = player.position;
                 bankPos = vector3(x, y, z);
                 robbingRange = config["RobbingRange"];
@@ -92,10 +106,6 @@ command rob(location){
                     return;
                 }
             }
-            else if(isBankOn == false){
-                player.message("You can't rob this bank since it is on cooldown!", "red");
-                return;
-            }   
         }
     }
 }
@@ -111,6 +121,10 @@ command robassist(argPlayer){
         argPlayer = toPlayer(argPlayer);
         if(argPlayer == null){
             player.message("Player not found!", "red");
+        }
+        else if(Robbing.contains(player.id)){
+            player.message("You are already assisting in a robbery!", "red");
+            return;
         }
         else if(Robbing.contains(argPlayer.id)){
             robberPos = argPlayer.position;
@@ -128,21 +142,39 @@ command robassist(argPlayer){
     }
 }
 
+function uihandle(){
+    player.message("silly", "red");
+}
+
 function robover(player){
     if(Robbing.contains(player.id)){
         broadcast(player.name + " has finished their robbery on " + bankName + " succesfully!", "orange");
         Robbing.remove(player.id);
-        if(rewardRobExp == true){
-            player.experience += robRewardExp;
-        }
-        if(rewardRobItems == true){
-            foreach(item in robRewardItems){
-                player.give(item, 1);
-            }
-        }
+        givexp(player);
+        giveitems(player);
     }
     else{
         player.message("You lost a robbery!", "red");
+    }
+}
+
+function givexp(player){
+    if(rewardRobExp == true){
+        player.experience += robRewardExp;
+    }
+    else{
+        return;
+    }
+}
+
+function giveitems(player){
+    if(rewardRobItems == true){
+        foreach (item in robRewardItems){
+            player.give(item, 1);
+        }
+    }
+    else{
+        return;
     }
 }
 
@@ -170,3 +202,43 @@ command checkposition(){
         logger.log("Rotation : {0}".format(player.rotation));
     }
 }
+
+// Debug
+event onInterval(1){
+    foreach(player in server.players){
+        if(player.getData(bankkDebug) == true){
+            playerPos = player.position;
+            bankPos = vector3(x, y, z);
+            robbingRange = config["RobbingRange"];
+            if(playerPos.distance(bankPos) <= robbingRange){
+                if(player.getData(isOnBank) == true){
+                    player.message("You Entered the bank region!");
+                    player.setData(isOnBank, false);
+                }
+            }
+            else if(playerPos.distance(bankPos) >= robbingRange){
+                if(player.getData(isOnBank) == false){
+                    player.message("You Left the" + bankName +" region!");
+                    player.setData(isOnBank, true);
+                }
+            }
+        }
+    }
+}
+
+command bankdebug(){
+    permission = config["Permission_Prefix"] + ".debug";
+    execute(){
+        player.message("Warning! This feature is for debug purposes ONLY! It may cause your client to lag and your chat to be filled with messages!", "red");
+        player.setData(bankkDebug, true);
+    }
+}
+
+command unbankdebug(){
+    permission = config["Permission_Prefix"] + ".debug";
+    execute(){
+        player.message("You have turned off debug mode!", "red");
+        player.setData(bankkDebug, false);
+    }
+}
+//
