@@ -10,14 +10,14 @@ event onLoad(){
 
 
 // Version
-Version = "1.0.2";
+Version = "1.0.4";
 
 /*
     Permissions:
 
     Permission for Robbers:
     Bank Info Permission: av.bankinfo
-    Rob Permission: av.rob
+    Rob Permissi  on: av.rob
     Rob Assist Permission: av.robassist
 
     Permission for Admins:
@@ -46,6 +46,7 @@ x = 10; // Change this to your x position on Vector3 | Use Command /checkpositio
 y = 10; // Change this to your y position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the most accurate spot)
 z = 10; // Change this to your z position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the most accurate spot)
 // CONFIGURATION
+policeRocketId = PD; // Put your Police ROCKET Group Id here (Can be found in \Servers\YOURSERVER\Rocket\ and choose Permissions.config)
 robberRange = 40; // The range a player has to be to join a robbery
 robTime = 120; // Put in Seconds
 rewardRobExp = true; // Set to false if you don't want the robbers to be rewarded exp
@@ -76,8 +77,6 @@ robberLost_Translation = "You lost a robbery!";
 robberDiedNatural_Translation = "{0} Has died while robbing the {1} and lost the robbery! He died by {2}";
 robberDiedPlayer_Translation = "{0} Has been killed while robbing the {1} and lost the robbery! The player that killed him was {2}";
 
-
-
 /*
 
     Don't change anything from here if you don't know what you're doing!!!
@@ -87,7 +86,9 @@ robberDiedPlayer_Translation = "{0} Has been killed while robbing the {1} and lo
 effectId = 45818;
 effectKey = 1294;
 
-isBankOn = true;
+isBankCooldownOn = false;
+robCooldown = robTime;
+robOngoing = false;
 
 config = {
     "Permission_Prefix": "av",
@@ -100,7 +101,7 @@ command bank(){
     permission = config["Permission_Prefix"] + ".bankinfo";
     allowedCaller = "player";
     execute(){
-        player.message(bankInfo_Translation.format(bankNameConfig));
+        player.message(bankInfo_Translation.format(bankNameConfig), "green", bankMessageIcon);
     }
 }
 
@@ -109,35 +110,40 @@ command rob(location){
     allowedCaller = "player";
     execute(){
         if(arguments.count < 1){
-            player.message(improperUsageRob_Translation.format(bankNameConfig), "red");
+            player.message(improperUsageRob_Translation.format(bankNameConfig), "red", bankMessageIcon);
+            return;
+        }
+        if(location != bankNameConfig){
+            player.message(improperUsageRob_Translation.format(bankNameConfig), "red", bankMessageIcon);
             return;
         }
         else if(location == bankNameConfig){
             if(Robbing.contains(player.id) or Robbing != null){
                 if(Robbing.contains(player.id)){
-                    player.message(playerAlreadyRobbing_Translation, "red");
+                    player.message(playerAlreadyRobbing_Translation, "red", bankMessageIcon);
                     return;
                 }
                 else if(Robbing != null){
-                    player.message(alreadyRobbing_Translation, "red");
+                    player.message(alreadyRobbing_Translation, "red", bankMessageIcon);
                     return;
                 }
             }
-            else if(isBankOn == false){
-                player.message(robbingCooldown_Translation.format(bankCooldown), "red");
+            else if(isBankCooldownOn == true){
+                player.message(robbingCooldown_Translation.format(bankCooldown), "red", bankMessageIcon);
                 return;
             }
-            else if(isBankOn == true){
+            else if(isBankCooldownOn == false){
                 playerPos = player.position;
                 bankPos = vector3(x, y, z);
                 robbingRange = config["RobbingRange"];
                 location = bankName;
                 if(playerPos.distance(bankPos) <= robbingRange){
-                    broadcast(robbingOngoing_Translation.format(player.name, location), "orange");
-                    wait.seconds(robTime.toNumber(), robover(player));
+                    broadcast(robbingOngoing_Translation.format(player.name, location), "orange", bankMessageIcon);
+                    robOngoing = true;
+                    wait.seconds(robTime.toNumber, player.setData("robCompleted", true));
                 }
                 else{
-                    player.message(robbingTooFar_Translation.format(config["RobbingRange"], location), "red");
+                    player.message(robbingTooFar_Translation.format(config["RobbingRange"], location), "red", bankMessageIcon);
                     return;
                 }
             }
@@ -150,15 +156,16 @@ command robassist(argPlayer){
     allowedCaller = "player";
     execute(){
         if(arguments.count < 1){
-            player.message(improperUsageRobAssist_Translation, "red");
+            player.message(improperUsageRobAssist_Translation, "red", bankMessageIcon);
             return;
         }
         argPlayer = toPlayer(argPlayer);
         if(argPlayer == null){
-            player.message(robberNotFound_Translation, "red");
+            player.message(robberNotFound_Translation, "red", bankMessageIcon);
+            return;
         }
         else if(Robbing.contains(player.id)){
-            player.message(alreadyAssisting_Translation, "red");
+            player.message(alreadyAssisting_Translation, "red", bankMessageIcon);
             return;
         }
         else if(Robbing.contains(argPlayer.id)){
@@ -166,12 +173,14 @@ command robassist(argPlayer){
             playerPos = player.position;
             robbingRange = config["RobbingRange"];
             if(playerPos.distance(RobberPos) < robberRange){
-                broadcast(nowAssisting_Translation.format(player.name, argPlayer.name), "red");
+                broadcast(nowAssisting_Translation.format(player.name, argPlayer.name), "red", bankMessageIcon);
                 Robbing.add(player.id);
-                wait.seconds(robTime.toNumber(), robover(player));
+                robOngoing = true;
+                wait.seconds(robTime.toNumber, player.setData("robCompleted", true));
             }
             else{
-                player.message(tooFarFromRobber_Translation.format(robberRange), "red");
+                player.message(tooFarFromRobber_Translation.format(robberRange), "red", bankMessageIcon);
+                return;
             }
         }
     }
@@ -187,13 +196,15 @@ function copUI(player, robber){
 
 function robover(player){
     if(Robbing.contains(player.id)){
-        broadcast(robberySuccess_Translation.format(player.name, bankName), "orange");
+        broadcast(robberySuccess_Translation.format(player.name, bankName), "orange", bankMessageIcon);
         Robbing.remove(player.id);
         givexp(player);
         giveitems(player);
+        isBankCooldownOn = true;
     }
     else{
-        player.message("You lost a robbery!", "red");
+        player.message("You lost a robbery!", "red", bankMessageIcon);
+        isBankCooldownOn = true;
     }
 }
 
@@ -220,12 +231,12 @@ function giveitems(player){
 event onPlayerDeath(player, killer, cause){
     if(Robbing.contains(player.id)){
         if(killer == null){
-            broadcast(robberDiedNatural_Translation.format(player.name, bankName, cause));
+            broadcast(robberDiedNatural_Translation.format(player.name, bankName, cause), "orange", bankMessageIcon);
             Robbing.remove(player.id);
             wait.seconds(2, robover(player));
         }
         else if(killer != null){
-            broadcast(robberDiedPlayer_Translation.format(player.name, bankName, killer.name));
+            broadcast(robberDiedPlayer_Translation.format(player.name, bankName, killer.name), "orange", bankMessageIcon);
             Robbing.remove(player.id);
             wait.seconds(2, robover(player));
         }
@@ -242,6 +253,50 @@ command checkposition(){
     }
 }
 
+event onInterval(1){
+    foreach(player in server.players){
+        if(robOngoing == true){
+            if(player.getData("robCompleted") == true){
+                robover(player);
+            }
+            else{
+                return;
+            }
+        }
+        else{
+            return;
+        }
+    }
+}
+
+event onInterval(1){
+    if(isBankCooldownOn == true){
+        if(bankCooldown == 0){
+            isBankCooldownOn = false;
+        }
+        else if(bankCooldown > 0){
+            bankCooldown --;
+        }
+    }
+    else{
+        return;
+    }
+}
+
+event onInterval(1){
+    if(Robbing != null){
+        if(robTime == 0){
+            robTime = robCooldown;
+        }
+        else if(robTime > 0){
+            robtime --;
+        }
+    }
+    else{
+        return;
+    }
+}
+
 // Debug
 event onInterval(1){
     foreach(player in server.players){
@@ -251,13 +306,13 @@ event onInterval(1){
             robbingRange = config["RobbingRange"];
             if(playerPos.distance(bankPos) <= robbingRange){
                 if(player.getData(isOnBank) == true){
-                    player.message("You Entered the" + bankName + "region!");
+                    player.message("You Entered the" + bankName + "region!", "green", bankMessageIcon);
                     player.setData(isOnBank, false);
                 }
             }
             else if(playerPos.distance(bankPos) >= robbingRange){
                 if(player.getData(isOnBank) == false){
-                    player.message("You Left the" + bankName +" region!");
+                    player.message("You Left the" + bankName +" region!", "green", bankMessageIcon);
                     player.setData(isOnBank, true);
                 }
             }
@@ -280,4 +335,4 @@ command unbankdebug(){
         player.setData(bankkDebug, false);
     }
 }
-//
+// Debug
