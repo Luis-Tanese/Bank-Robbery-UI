@@ -8,7 +8,7 @@ server.log("----------[UI By: Heawen]---------");
 server.log("----------------------------------");
 
 // Version
-Version = "1.0.1";
+Version = "1.0.2";
 
 /*
     Permissions:
@@ -31,8 +31,9 @@ Version = "1.0.1";
 bankName = "AV Bank"; // Change this to your bank's name (Will be displayed in announcements)
 bankNameConfig = "av_bank"; // Put this in all lowercase letters and use "_" instead of spaces (You can shorten it to just "av") (Will be used in /rob <bankNameConfig> command)
 bankRange = 50; // The range of your bank from the middle position
+bankCooldown = 300; // The cooldown after the bank got robbed
 
-// BANK POSITION (Try to get to the middle of the bank)
+// BANK POSITION (Try to get to the middle of your bank for the most accurate position)
 x = 10; // Change this to your x position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the most accurate spot)
 y = 10; // Change this to your y position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the most accurate spot)
 z = 10; // Change this to your z position on Vector3 | Use Command /checkposition to Get Your Vector3 Coordinates (Use all characters for the most accurate spot)
@@ -47,7 +48,7 @@ robRewardItems = [12, 13, 14]; // Put Item IDs for Reward
 
 /*
 
-    Don't change anything from here!!!
+    Don't change anything from here if you don't know what you're doing!!!
 
 */
 
@@ -58,7 +59,7 @@ isBankOn = true;
 
 config = {
     "Permission_Prefix": "av",
-    "RobbingRange": bankRange
+    "RobbingRange": bankRange.toNumber();
 };
 
 Robbing = array();
@@ -84,9 +85,15 @@ command rob(location){
             return;
         }
         else if(location == bankNameConfig){
-            if(Robbing != null){
-                player.message("Someone is already robbing this bank");
-                return;
+            if(Robbing.contains(player.id) or Robbing != null){
+                if(Robbing.contains(player.id)){
+                    player.message("You are already robbing this bank!");
+                    return;
+                }
+                else if(Robbing != null){
+                    player.message("Someone is already robbing this bank");
+                    return;
+                }
             }
             else if(isBankOn == false){
                 player.message("You can't rob this bank since it is on cooldown!", "red");
@@ -99,7 +106,7 @@ command rob(location){
                 location = bankName;
                 if(playerPos.distance(bankPos) <= robbingRange){
                     broadcast(player.name + " Is Robbing The " + location + "!", "orange");
-                    wait.seconds(robTime, robover(player));
+                    wait.seconds(robTime.toNumber(), robover(player));
                 }
                 else{
                     player.message("You need to be atleast " + config["RobbingRange"] + " meters from " + location + "!", "red");
@@ -142,7 +149,11 @@ command robassist(argPlayer){
     }
 }
 
-function uihandle(){
+function robberUI(player){
+    player.message("silly", "red");
+}
+
+function copUI(player, robber){
     player.message("silly", "red");
 }
 
@@ -160,7 +171,7 @@ function robover(player){
 
 function givexp(player){
     if(rewardRobExp == true){
-        player.experience += robRewardExp;
+        player.experience += robRewardExp.toNumber();
     }
     else{
         return;
