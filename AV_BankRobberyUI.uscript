@@ -12,6 +12,14 @@ event onLoad(){
 Version = "1.1.0";
 
 /*
+
+    Important Note:
+
+    You will need the Effect Manager Extended uScript Module found here: https://github.com/RiceField-Plugins/EffectManagerExtended-uScript
+
+*/
+
+/*
     Permissions:
 
     Permission for Robbers:
@@ -57,7 +65,9 @@ bankInfo = [ // All your bank's info (If you don't know what to do or get errors
     ]
 ];
 // Important Details
-policeRocketId = PD; // Put your Police ROCKET Group Id here (Can be found in \Servers\YOURSERVER\Rocket\ and choose Permissions.config)
+policeRocketId = "PD"; // Put your Police ROCKET Group Id here (Can be found in \Servers\YOURSERVER\Rocket\ and choose Permissions.config)
+rewardRobExp = true; // Set to false if you don't want the robbers to be rewarded exp
+robRewardExp = 10000; // Put Exp for reward
 robberRange = 20; // The range a player has to be from another player to join a robbery
 rewardRobItems = true; // Set to false if you don't want the robbers to be rewarded items
 robRewardItems = [12, 13, 14]; // Put Item IDs for Reward
@@ -69,6 +79,7 @@ bankMessageIcon = "https://i.imgur.com/SFdYgXJ.png"; // Not necessary (Leave bla
 
 */
 
+// Message Translations
 playerTooFarBank_Translation = "You are too far from the bank to use this command!";
 bankOnCooldown_Translation = "The bank is still in cooldown for {0} seconds!";
 alreadyRobbingBank_Translation = "You are already robbing this bank!";
@@ -83,6 +94,9 @@ someoneAlreadyRobbing_Translation = "Someone is already robbing this bank!";
 robberDiedNatural_Translation = "{0} Has died while robbing the {1} and lost the robbery! He died by {2}";
 robberDiedPlayer_Translation = "{0} Has been killed while robbing the {1} and lost the robbery! The player that killed him was {2}";
 diedWhileAssisting_Translation = "You died while Assisting someone, you will have to assist them again in order to go back to the robbery!";
+// UI Translations
+robTime = "{0}:{1}";
+
 
 /*
 
@@ -90,7 +104,7 @@ diedWhileAssisting_Translation = "You died while Assisting someone, you will hav
 
 */
 
-efffectId = 45818;
+effectId = 45818;
 Robbing = [];
 
 command rob(){
@@ -110,13 +124,15 @@ command rob(){
                 if(Robing.contains(player.id)){
                     player.message(alreadyRobbingBank_Translation, "red", bankMessageIcon);
                 }
-                else if(Robbing.contains(bankName)){
+                else if(Robbing != null){
                     player.message(someoneAlreadyRobbing_Translation, "red", bankMessageIcon);
                     return;
                 }
-                else if(!Robbing.contains(player.id)){
+                else if(Robbing == null){
                     Robbing.add(bankName, player.id);
                     broadcast(nowRobbingBank_Translation.format(player.name, bankInfo[bankID][0]), "orange", bankMessageIcon);
+                    robui(player);
+                    copui(player);
                     countdown(robTime, robOver(player, bankCooldown, bankName));
                 }
             }
@@ -157,7 +173,9 @@ command robassist(robber){
             if(player.position.distance(robber.position) < robberRange){
                 Robbing.add(player.id);
                 broadcast(nowAssisting_Translation.format(player.name, robber.name, bankName), "orange", bankMessageIcon);
+                robui(player);
                 player.setData("Assisting", true);
+                Robbing.add(player.id);
             }
         }
     }
@@ -180,6 +198,7 @@ event onPlayerDeath(player, killer, cause){
     else if(player.getData("Assisting") == true){
         player.message(diedWhileAssisting_Translation, "red", bankMessageIcon);
         player.setData("Assisting", false);
+        Robbing.remove(player.id);
         return;
     }
 }
@@ -205,25 +224,51 @@ function resetBankCooldown(player, bankCooldown){
 function robOver(player, bankCooldown, bankName){
     bankID = getNearestBank(player);
     foreach(player in server.players){
+        if(player.rocketGroup.id == policeRocketId){
+            EffectManagerExtended.setVisibility(player.id, effectId, "robmain", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robinfo", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robreward", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robtime", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "copmain", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "coprobamount", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "coprobtime", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "copinfo", "false");
+        }
         if(Robbing.contains(bankName, player.id)){
             broadcast(finishedRobbingBank_Translation.format(player.name, bankInfo[bankID][0]), "orange", bankMessageIcon);
             Robbing.remove(bankName, player.id);
             givexp(player);
             giveitems(player);
             resetBankCooldown(player, bankCooldown);
+            EffectManagerExtended.setVisibility(player.id, effectId, "robmain", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robinfo", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robreward", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robtime", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "copmain", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "coprobamount", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "coprobtime", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "copinfo", "false");
             return;
         }
-        else if(player.getData("Assisting") == true and !Robbing.contains(player.id)){
+        else if(player.getData("Assisting") == true and Robbing.contains(player.id)){
             givexp(player);
             giveitems(player);
             player.setData("Assisting", false);
+            Robbing.remove(player.id);
+            EffectManagerExtended.setVisibility(player.id, effectId, "robmain", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robinfo", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robreward", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robtime", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "copmain", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "coprobamount", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "coprobtime", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "copinfo", "false");
             return;
         }
         else{
             return;
         }
     }
-
     if(Robbing.contains(bankName, player.id)){
         broadcast(finishedRobbingBank_Translation.format(player.name, bankInfo[bankID][0]), "orange", bankMessageIcon);
         Robbing.remove(player.id);
@@ -256,7 +301,7 @@ command checkposition(){
 
 function givexp(player){
     if(rewardRobExp == true){
-        player.experience += robRewardExp.toNumber();
+        player.experience += robRewardExp;
     }
     else{
         return;
@@ -271,6 +316,62 @@ function giveitems(player){
     }
     else{
         return;
+    }
+}
+
+function copui(player){
+    bankID = getNearestBank(player);
+    foreach(player in server.players){
+        robbers = Robbing.count - 1;
+        if(player.rocketGroup.id == policeRocketId){
+            effectManager.sendUI(effectId, effectId, player.id);
+            EffectManagerExtended.setVisibility(player.id, effectId, "robmain", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robinfo", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robreward", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robtime", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "copmain", "true");
+            EffectManagerExtended.setVisibility(player.id, effectId, "coprobamount", "true");
+            EffectManagerExtended.setVisibility(player.id, effectId, "coprobtime", "true");
+            EffectManagerExtended.setVisibility(player.id, effectId, "copinfo", "true");
+            EffectManagerExtended.setText(player.id, effectID, "coprobamount", robbers.toString);
+        }
+        else{
+            return;
+        }
+    }
+}
+
+function robui(player){
+    foreach(player in server.players){
+        if(Robbing.contains(player.id)){
+            bankID = getNearestBank(player);
+            robReward = bankInfo[bankID][3];
+            effectManager.sendUI(effectId, effectId, player.id);
+            EffectManagerExtended.setVisibility(player.id, effectId, "robmain", "true");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robinfo", "true");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robreward", "true");
+            EffectManagerExtended.setVisibility(player.id, effectId, "robtime", "true");
+            EffectManagerExtended.setVisibility(player.id, effectId, "copmain", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "coprobamount", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "coprobtime", "false");
+            EffectManagerExtended.setVisibility(player.id, effectId, "copinfo", "false");
+            EffectManagerExtended.setText(player.id, effectID, "robreward", robRewardExp.toString());
+        }
+        else{
+            return;
+        }
+    }
+}
+
+event onInterval(1){
+    foreach(player in server.players){
+        robbers = Robbing.count - 1;
+        if(player.rocketGroup.id == policeRocketId){
+            EffectManagerExtended.setText(player.id, effectID, "coprobamount", robbers.toString);
+        }
+        else{
+            return;
+        }
     }
 }
 
@@ -294,6 +395,8 @@ function countdownHelper(time, current, action){
             seconds = "0" + seconds;
         }
         print("{0}:{1}".format(mins, seconds));
+        EffectManagerExtended.setText(player.id, effectID, "robtime", robTime.format(mins, seconds));
+        EffectManagerExtended.setText(player.id, effectID, "coprobtime", robTime.format(mins, seconds));
         wait.seconds(1, countdownHelper, time, current + 1, action);
     }
 }
