@@ -441,7 +441,7 @@ command bankdebug(){
     permission = config["Permission_Prefix"] + ".debug";
     execute(){
         player.message("Warning! This feature is for debug purposes ONLY! It may cause your client to lag and your chat to be filled with messages!", "red");
-        player.setData(bankkDebug, true);
+        player.setData("BankDebug", true);
     }
 }
 
@@ -449,6 +449,6 @@ command unbankdebug(){
     permission = config["Permission_Prefix"] + ".debug";
     execute(){
         player.message("You have turned off debug mode!", "red");
-        player.setData(bankkDebug, false);
+        player.setData("BankDebug", false);
     }
 }
