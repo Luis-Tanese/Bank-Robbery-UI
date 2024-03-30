@@ -3,7 +3,7 @@ event onLoad(){
     server.log("--------[AV Bank Robery UI]--------");
     server.log("-------[Successfully Loaded]------");
     server.log("----------[Version " + Version + "]---------");
-    server.log("--------[Script By: Tanese]-------");
+    server.log("------------[By: Tanese]----------");
     server.log("----------------------------------");
 }
 
@@ -133,7 +133,7 @@ command rob(){
                     broadcast(nowRobbingBank_Translation.format(player.name, bankInfo[bankID][0]), "orange", bankMessageIcon);
                     robui(player);
                     copui(player);
-                    countdown(robTime, robOver(player, bankCooldown, bankName));
+                    countdown(robTime, robOver(player, bankCooldown, bankName, robTime));
                 }
             }
             else{
@@ -221,7 +221,12 @@ function resetBankCooldown(player, bankCooldown){
     bankCooldown = bankInfo[bankID][3];
 }
 
-function robOver(player, bankCooldown, bankName){
+function resetRobTime(player, robTime){
+    bankID = getNearestBank(player);
+    robTime = bankInfo[bankID][4];
+}
+
+function robOver(player, bankCooldown, bankName, robTime){
     bankID = getNearestBank(player);
     foreach(player in server.players){
         if(player.rocketGroup.id == policeRocketId){
@@ -234,12 +239,13 @@ function robOver(player, bankCooldown, bankName){
             EffectManagerExtended.setVisibility(player.id, effectId, "coprobtime", "false");
             EffectManagerExtended.setVisibility(player.id, effectId, "copinfo", "false");
         }
-        if(Robbing.contains(bankName, player.id)){
+        else if(Robbing.contains(bankName, player.id)){
             broadcast(finishedRobbingBank_Translation.format(player.name, bankInfo[bankID][0]), "orange", bankMessageIcon);
             Robbing.remove(bankName, player.id);
             givexp(player);
             giveitems(player);
             resetBankCooldown(player, bankCooldown);
+            resetRobTime(player, robTime);
             EffectManagerExtended.setVisibility(player.id, effectId, "robmain", "false");
             EffectManagerExtended.setVisibility(player.id, effectId, "robinfo", "false");
             EffectManagerExtended.setVisibility(player.id, effectId, "robreward", "false");
