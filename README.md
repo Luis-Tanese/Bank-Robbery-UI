@@ -1,3 +1,3 @@
 # Bank Robbery UI made with uScript 
-## Code by: Tanese
-It's still in production
+## By: Tanese
+UI: https://steamcommunity.com/sharedfiles/filedetails/?id=3206997315
