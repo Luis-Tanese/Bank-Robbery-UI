@@ -227,7 +227,7 @@ function resetRobTime(player, robTime){
 
 function robOver(player, bankCooldown, bankName, robTime){
     bankID = getNearestBank(player);
-    if(player.rocketGroup.id == policeRocketId){
+    if(player.getData("Police") == true){
         EffectManagerExtended.setVisibility(player.id, effectId, "robmain", "false");
         EffectManagerExtended.setVisibility(player.id, effectId, "robinfo", "false");
         EffectManagerExtended.setVisibility(player.id, effectId, "robreward", "false");
@@ -329,7 +329,7 @@ function robui(player){
 event onInterval(1){
     foreach(player in server.players){
         robbers = Robbing.count - 1;
-        if(player.rocketGroup.id == policeRocketId){
+        if(player.getData("Police") == true){
             EffectManagerExtended.setText(player.id, effectID, "coprobamount", robbers.toString);
         }
         else{
@@ -338,11 +338,20 @@ event onInterval(1){
     }
 }
 
+event onPlayerJoined(player){
+    if(player.rocketGroup.id == policeRocketId){
+        player.setData("Police", true);
+    }
+    else{
+        player.setData("Police", false);
+    }
+}
+
 event onInterval(1){
     foreach(player in server.players){
         if(Robbing != null){
             robbers = Robbing.count - 1;
-            if(player.rocketGroup.id == policeRocketId){
+            if(player.getData("Police") == true){
                 effectManager.sendUI(effectId, effectId, player.id);
                 EffectManagerExtended.setVisibility(player.id, effectId, "robmain", "false");
                 EffectManagerExtended.setVisibility(player.id, effectId, "robinfo", "false");
