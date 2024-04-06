@@ -305,24 +305,22 @@ function giveitems(player){
 }
 
 function robui(player){
-    foreach(player in server.players){
-        if(Robbing.contains(player.id)){
-            bankID = getNearestBank(player);
-            robReward = bankInfo[bankID][3];
-            effectManager.sendUI(effectId, effectId, player.id);
-            EffectManagerExtended.setVisibility(player.id, effectId, "robmain", "true");
-            EffectManagerExtended.setVisibility(player.id, effectId, "robinfo", "true");
-            EffectManagerExtended.setVisibility(player.id, effectId, "robreward", "true");
-            EffectManagerExtended.setVisibility(player.id, effectId, "robtime", "true");
-            EffectManagerExtended.setVisibility(player.id, effectId, "copmain", "false");
-            EffectManagerExtended.setVisibility(player.id, effectId, "coprobamount", "false");
-            EffectManagerExtended.setVisibility(player.id, effectId, "coprobtime", "false");
-            EffectManagerExtended.setVisibility(player.id, effectId, "copinfo", "false");
-            EffectManagerExtended.setText(player.id, effectID, "robreward", robRewardExp.toString());
-        }
-        else{
-            return;
-        }
+    if(Robbing.contains(player.id)){
+        bankID = getNearestBank(player);
+        robReward = bankInfo[bankID][3];
+        effectManager.sendUI(effectId, effectId, player.id);
+        EffectManagerExtended.setVisibility(player.id, effectId, "robmain", "true");
+        EffectManagerExtended.setVisibility(player.id, effectId, "robinfo", "true");
+        EffectManagerExtended.setVisibility(player.id, effectId, "robreward", "true");
+        EffectManagerExtended.setVisibility(player.id, effectId, "robtime", "true");
+        EffectManagerExtended.setVisibility(player.id, effectId, "copmain", "false");
+        EffectManagerExtended.setVisibility(player.id, effectId, "coprobamount", "false");
+        EffectManagerExtended.setVisibility(player.id, effectId, "coprobtime", "false");
+        EffectManagerExtended.setVisibility(player.id, effectId, "copinfo", "false");
+        EffectManagerExtended.setText(player.id, effectID, "robreward", robRewardExp.toString());
+    }
+    else{
+        return;
     }
 }
 
