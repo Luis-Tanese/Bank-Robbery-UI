@@ -112,7 +112,7 @@ command rob(){
     allowedCaller = "player";
     execute(){
         bankID = getNearestBank(player);
-        if(player.position.distance(bankInfo[bankID][1]) > bankInfo[bankID][1]){
+        if(player.position.distance(bankInfo[bankID][1]) > bankInfo[bankID][2]){
             player.message(playerTooFarBank_Translation, "red", bankMessageIcon);
             return;
         }
