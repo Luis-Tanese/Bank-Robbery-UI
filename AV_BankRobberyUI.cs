@@ -448,3 +448,148 @@ command unbankdebug(){
         player.setData("BankDebug", false);
     }
 }
+
+
+// REDO OF SCRIPT
+
+/*  
+    AV Bank Robbery UI
+
+    Modules Needed: 
+    RiceField's EffectManagerExtended: https://github.com/BarehSolok/EffectManagerExtended-uScript
+*/
+
+bankInfo = [ // All your bank's info (If you don't know what to do or get errors, ask me 'tanese' on discord for help!)
+    [
+        "AV Bank", // Change this to your bank's name (Will be displayed in UI)
+        vector3(80.7193984985352, 34.5396766662598, 810.215026855469),  // Center point of your bank region. (Use /checkposition to get position).
+        100 // Bank Radius
+    ],
+    [
+        "Silly Bank", // Change this to your bank's name (Will be displayed in UI)
+        vector3(45.7193, 90.5396598, 1100.268469), // Center point of your bank region. (Use /checkposition to get position).
+        100 // Bank Radius
+    ],
+    [
+        "Womp Bank", // Change this to your bank's name (Will be displayed in UI)
+        vector3(12.939842, 67.6662, 810.2159), // Center point of your bank region. (Use /checkposition to get position).
+        100 // Bank Radius
+    ]
+];
+
+// Important Configs
+robberRange = 20; // The range a player has to be from another player to join a robbery
+bankMessageIcon = "https://i.imgur.com/SFdYgXJ.png"; // Not necessary
+robberyTime = 400; // The time it takes from start to finish robbing the bank (Leave in seconds)
+bankCooldown = 200; // The cooldown of the bank (Leave in seconds)
+policeRocketGroup = "Police" // Add the police's rocket group Id
+
+// Translations
+playerTooFarBank_Translation = "You are too far from the bank to rob it!";
+policeRobBank_Translation = "Police Officers cannot rob banks!";
+bankOnCooldown_Translation = "The bank is still in cooldown for {0} seconds!";
+robTime_Translation = "Time Left: {0}:{1}";
+
+
+command bankrob(){
+    permission = "av.bankrob";
+    execute(){
+        player.sudo("/silly");
+    }
+}
+
+ID = 19768;
+isBankOnCD = false;
+
+function silly(player){
+    bankId = getNearestBank(player);
+    if(player.position.distance(bankInfo[bankID][1]) > bankInfo[bankID][2]){
+        player.message(playerTooFarBank_Translation, "red", "https://i.imgur.com/SFdYgXJ.png");
+        return;
+    }
+    if(player.getData("Police") == true){
+        player.message(policeRobBank_Translation, "red", "https://i.imgur.com/SFdYgXJ.png");
+        return;
+    }
+    cooldownTime = runningBankCooldown();
+    if(isBankOnCD == true){
+        player.message(bankOnCooldown_Translation.format(cooldownTime), "red", "https://i.imgur.com/SFdYgXJ.png");
+        return;
+    }
+    else{
+        isBankOnCD = true;
+        wait.seconds(bankCooldown, removingCD);
+    }
+}
+
+function getNearestBank(player){
+    for(bank = 0; bank < bankInfo.count; bank++){
+        if(player.distance(bankInfo[bank][1]) < bankInfo[bank][2]){
+            return bank;
+        }
+    }
+    return null;
+}
+
+function countdown(time, action, player){
+  countdownHelper(time, 0, action, player);
+}
+
+function countdownHelper(time, current, action, player){
+    if(time == current){
+        action();
+        return;
+    }
+    else{
+        diff = time - current;
+        mins = math.floor(diff / 60);
+        seconds = diff % 60;
+        if(mins <= 9){
+            mins = "0" + mins;
+        }
+        if(seconds <= 9){
+            seconds = "0" + seconds;
+        }
+        EffectManagerExtended.setText(player.id, ID, "robtime", robTime_Translation.format(mins, seconds));
+        EffectManagerExtended.setText(player.id, ID, "coptime", robTime_Translation.format(mins, seconds));
+        wait.seconds(1, countdownHelper, time, current + 1, action);
+    }
+}
+
+playerCooldown = [];
+
+function runningBankCooldown(){
+    if(playerCooldown != null){
+        currentTime = server.time.now.totalSeconds;
+        endCooldownTime = server.time.now.totalSeconds + bankCooldown;
+        endingCooldown = endCooldownTime - currentTime;
+        return endingCooldown;
+    }
+}
+
+function removingCD(){
+    playerCooldown.clear()
+    isBankOnCD = false;
+}
+
+function sendUI(player){
+    foreach(play in server.players){
+        if(play.getData("Police") == true){
+            EffectManagerExtended.setVisibility(player.id, ID, "PoliceArea", "True");
+            EffectManagerExtended.setVisibility(player.id, ID, "RobberArea", "False");
+        }
+    }
+    else{
+        EffectManagerExtended.setVisibility(player.id, ID, "RobberArea", "True");
+        EffectManagerExtended.setVisibility(player.id, ID, "PoliceArea", "False");
+    }
+}
+
+event onPlayerJoined(player){
+    if(player.hasGroup(policeRocketGroup)){
+        player.setData("Police", true);
+    }
+    else{
+        player.setData("Police", false)
+    }
+}
